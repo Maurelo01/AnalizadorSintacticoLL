@@ -12,9 +12,9 @@
 "Wison¿"                    return 'RW_WISON_INICIO';
 "?Wison"                    return 'RW_WISON_FIN';
 "Lex"\s*"{:"                return 'RW_LEX_INICIO';
-":}"                        return 'RW_LEX_FIN';
 "Syntax"\s*"{{:"            return 'RW_SYNTAX_INICIO';
 ":}}"                       return 'RW_SYNTAX_FIN';
+":}"                        return 'RW_LEX_FIN';
 "Terminal"                  return 'RW_TERMINAL';
 "No_Terminal"               return 'RW_NO_TERMINAL';
 "Initial_Sim"               return 'RW_INITIAL_SIM';
@@ -59,8 +59,7 @@
 inicio
     : RW_WISON_INICIO bloque_lexico bloque_syntax RW_WISON_FIN EOF
         {
-            return
-            {
+            return {
                 tipo: "GRAMATICA_WISON",
                 lexico: $2,
                 sintactico: $3
