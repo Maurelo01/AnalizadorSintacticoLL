@@ -15,8 +15,8 @@ fs.readFile(archivo, 'utf8', (err, data) =>
         console.log("ANÁLISIS EXITOSO");
         console.log(JSON.stringify(ast, null, 2));
         const gestorGramatica = new GestorGramatica(ast);
-        gestorGramatica.generarTablaSimbolos();
         gestorGramatica.mostrarTablaSimbolos();
+        gestorGramatica.imprimirErrores();
     }
     catch (error)
     {
