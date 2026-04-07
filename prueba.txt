@@ -11,6 +11,8 @@ Terminal $_FIN <- 'FIN';
 Terminal $_Letra <- [aA-zZ];
 Terminal $_NUMERO <- [0-9];
 Terminal $_NUMEROS <- [0-9]*;
+Terminal $_P_Ab    <- '(' ;
+Terminal $_P_Ce    <- ')' ;
 :}
 Syntax {{:
 No_Terminal %_Prod_A;
