@@ -8,9 +8,58 @@ class GestorGramatica
         this.terminales = new Map();    
         this.noTerminales = new Set();
         this.errores = [];
+        this.firsts = new Map();
+        this.follows = new Map();
         this.generarTablaSimbolos();
         this.verificarRecursividadIzquierda();
         this.verificarFactorizacion();
+    }
+
+    calcularFirsts()
+    {
+        for (let nt of this.noTerminales)
+        {
+            this.firsts.set(nt, new Set());
+        }
+        let huboCambios = true;
+        while (huboCambios)
+        {
+            huboCambios = false;
+            for (let [cabeza, alternativas] of this.producciones)
+            {
+                let firstDeCabeza = this.firsts.get(cabeza);
+                let tamanoOriginal = firstDeCabeza.size;
+                alternativas.forEach(alternativa =>
+                {
+                    if (alternativa.length === 0) // Epsilon agrega ε a first
+                    {
+                        firstDeCabeza.add('ε');
+                    }
+                    else
+                    {
+                        let primerSimbolo = alternativa[0];
+                        // Si empieza con Terminal se agrega a first
+                        if (primerSimbolo.tipo === "TERMINAL")
+                        {
+                            firstDeCabeza.add(primerSimbolo.id);
+                        }
+                        // Si empieza con No Terminal se hereda sus first
+                        else if (primerSimbolo.tipo === "NO_TERMINAL")
+                        {
+                            let firstDelHijo = this.firsts.get(primerSimbolo.id);
+                            if (firstDelHijo)
+                            {
+                                firstDelHijo.forEach(simbolo => firstDeCabeza.add(simbolo));
+                            }
+                        }
+                    }
+                });
+                if (firstDeCabeza.size > tamanoOriginal)
+                {
+                    huboCambios = true;
+                }
+            }
+        }
     }
 
     generarTablaSimbolos()
@@ -116,7 +165,7 @@ class GestorGramatica
         }
     }
 
-    imprimirErrores()
+    mostrarErrores()
     {
         if (this.errores.length > 0)
         {
@@ -125,7 +174,17 @@ class GestorGramatica
         }
         else
         {
-            console.log("\n La gramática es apta para LL, sin recursividad por la izquierda.");
+            console.log("\nLa gramática es apta para LL, sin recursividad por la izquierda.");
+        }
+    }
+
+    mostrarFirsts()
+    {
+        console.log("\n--- CONJUNTOS FIRST ---");
+        for (let [nt, conjunto] of this.firsts)
+        {
+            // Convertimos el Set a un arreglo para imprimirlo bonito
+            console.log(` FIRST(${nt}) = { ${Array.from(conjunto).join(', ')} }`);
         }
     }
 
@@ -144,7 +203,7 @@ class GestorGramatica
                     let primerSimbolo = alternativa[0];
                     if (primerSimbolo.tipo === "NO_TERMINAL" && primerSimbolo.id === cabeza)
                     {
-                        this.errores.push(`Error LL(1): Recursividad por la izquierda directa detectada en la producción ${cabeza} -> ${cabeza} ...`);
+                        this.errores.push(`Error LL: Recursividad por la izquierda directa detectada en la producción ${cabeza} -> ${cabeza} ...`);
                         hayRecursividad = true;
                     }
                 }
@@ -171,7 +230,7 @@ class GestorGramatica
                         let claveSimbolo = primerSimbolo.tipo + "_" + primerSimbolo.id;
                         if (primerosSimbolos.has(claveSimbolo))
                         {
-                            this.errores.push(`Error LL(1): Falta factorizar en la producción ${cabeza}. Se detecto ambigüedad al iniciar con '${primerSimbolo.id}' en múltiples alternativas.`);
+                            this.errores.push(`Error LL: Falta factorizar en la producción ${cabeza}. Se detecto ambigüedad al iniciar con '${primerSimbolo.id}' en múltiples alternativas.`);
                             faltaFactorizar = true;
                         }
                         else
