@@ -16,7 +16,12 @@ fs.readFile(archivo, 'utf8', (err, data) =>
         console.log(JSON.stringify(ast, null, 2));
         const gestorGramatica = new GestorGramatica(ast);
         gestorGramatica.mostrarTablaSimbolos();
-        gestorGramatica.imprimirErrores();
+        gestorGramatica.mostrarErrores();
+        if (gestorGramatica.errores.length === 0)
+        {
+            gestorGramatica.calcularFirsts();
+            gestorGramatica.mostrarFirsts();
+        }
     }
     catch (error)
     {
