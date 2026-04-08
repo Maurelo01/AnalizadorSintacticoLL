@@ -28,7 +28,7 @@ class GestorGramatica
             for (let [cabeza, alternativas] of this.producciones)
             {
                 let firstDeCabeza = this.firsts.get(cabeza);
-                let tamanoOriginal = firstDeCabeza.size;
+                let tamañoOriginal = firstDeCabeza.size;
                 alternativas.forEach(alternativa =>
                 {
                     if (alternativa.length === 0) // Epsilon agrega ε a first
@@ -54,7 +54,7 @@ class GestorGramatica
                         }
                     }
                 });
-                if (firstDeCabeza.size > tamanoOriginal)
+                if (firstDeCabeza.size > tamañoOriginal)
                 {
                     huboCambios = true;
                 }
@@ -87,7 +87,7 @@ class GestorGramatica
                         if (simboloActual.tipo === "NO_TERMINAL")
                         {
                             let followDelActual = this.follows.get(simboloActual.id);
-                            let tamanoOriginal = followDelActual.size;
+                            let tamañoOriginal = followDelActual.size;
                             let tieneEpsilon = true;
                             for (let j = i + 1; j < alternativa.length; j++)
                             {
@@ -103,7 +103,8 @@ class GestorGramatica
                                     let firstDelSiguiente = this.firsts.get(simboloSiguiente.id);
                                     if (firstDelSiguiente)
                                     {
-                                        firstDelSiguiente.forEach(s => {
+                                        firstDelSiguiente.forEach(s =>
+                                        {
                                             if (s !== 'ε') followDelActual.add(s);
                                         });
                                         if (!firstDelSiguiente.has('ε'))
@@ -123,7 +124,7 @@ class GestorGramatica
                                     followDeCabeza.forEach(s => followDelActual.add(s));
                                 }
                             }
-                            if (followDelActual.size > tamanoOriginal)
+                            if (followDelActual.size > tamañoOriginal)
                             {
                                 huboCambios = true;
                             }
@@ -295,27 +296,33 @@ class GestorGramatica
     analizarCadenaConPila(tokensLexer)
     {
         console.log("\n--- INICIANDO ANÁLISIS LL(1) CON PILA ---");
+        let arbolRaiz = { etiqueta: this.simboloInicial, hijos: [] };
         let pila = [];
         pila.push({ tipo: "TERMINAL", id: "$_FIN" });
-        pila.push({ tipo: "NO_TERMINAL", id: this.simboloInicial });
+        pila.push({ tipo: "NO_TERMINAL", id: this.simboloInicial, nodo: arbolRaiz });
         let ptr = 0;
         let tokenActual = tokensLexer[ptr];
         while (pila.length > 0)
         {
-            let X = pila.pop();
+            let elementoPila = pila.pop();
+            let X = elementoPila;
             let a = tokenActual;
             console.log(`Pila tope: ${X.id} | Token entrada: ${a.id}`);
             if (X.tipo === "TERMINAL")
             {
                 if (X.id === a.id)
                 {
+                    if (X.nodo)
+                    {
+                        X.nodo.etiqueta = a.lexema;
+                    }
                     ptr++;
                     if (ptr < tokensLexer.length) tokenActual = tokensLexer[ptr];
                 }
                 else
                 {
                     console.error(`Error Sintáctico: Se esperaba '${X.id}', se encontró '${a.id}' en lexema '${a.lexema}'`);
-                    return false;
+                    return { exito: false, arbol: null };
                 }
             } 
             else if (X.tipo === "NO_TERMINAL")
@@ -328,26 +335,37 @@ class GestorGramatica
                     // Si no es ε se mete en los símbolos a la pila de forma inversa
                     if (alternativa.length > 0)
                     {
+                        let nodosHijos = [];
+                        for (let i = 0; i < alternativa.length; i++)
+                        {
+                            let nuevoNodo = { etiqueta: alternativa[i].id, hijos: [] };
+                            nodosHijos.push(nuevoNodo);
+                            X.nodo.hijos.push(nuevoNodo); 
+                        }
                         for (let i = alternativa.length - 1; i >= 0; i--)
                         {
-                            pila.push(alternativa[i]);
+                            pila.push({ tipo: alternativa[i].tipo, id: alternativa[i].id, nodo: nodosHijos[i] });
                         }
+                    }
+                    else
+                    {
+                        X.nodo.hijos.push({ etiqueta: 'ε', hijos: [] });
                     }
                 }
                 else
                 {
                     console.error(`Error Sintáctico: No hay regla en TAS para M[${X.id}, ${a.id}]. Token inesperado: '${a.lexema}'`);
-                    return false;
+                    return { exito: false, arbol: null };
                 }
             }
         }
-        if (tokenActual.id !== "$_FIN")
+        if (!tokenActual || tokenActual.id !== "$_FIN")
         {
             console.error("Error Sintáctico: Entrada no consumida completamente.");
-            return false;
+            return { exito: false, arbol: null };
         }
         console.log("¡Cadena aceptada con éxito! La pila está vacía y se consumió la entrada.");
-        return true;
+        return { exito: true, arbol: arbolRaiz };
     }
 
     mostrarTAS()

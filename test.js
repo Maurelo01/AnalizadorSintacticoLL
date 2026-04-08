@@ -33,7 +33,12 @@ fs.readFile(archivo, 'utf8', (err, data) =>
             let listaTokens = escaner.generarTokens(textoDePrueba);
             console.log("\nTokens generados por el Lexer:");
             console.log(listaTokens.map(t => `<${t.id}, '${t.lexema}'>`).join("  "));
-            gestorGramatica.analizarCadenaConPila(listaTokens);
+            let resultadoAnalisis = gestorGramatica.analizarCadenaConPila(listaTokens);
+            if (resultadoAnalisis.exito)
+            {
+                console.log("\n--- JSON DEL ÁRBOL DE DERIVACIÓN ---");
+                console.log(JSON.stringify(resultadoAnalisis.arbol, null, 2));
+            }
         }
     }
     catch (error)
