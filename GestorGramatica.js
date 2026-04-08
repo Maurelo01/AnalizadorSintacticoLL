@@ -62,6 +62,78 @@ class GestorGramatica
         }
     }
 
+    calcularFollows()
+    {
+        for (let nt of this.noTerminales)
+        {
+            this.follows.set(nt, new Set());
+        }
+        // Al símbolo inicial se le agrega el símbolo de fin de cadena $
+        if (this.simboloInicial && this.follows.has(this.simboloInicial))
+        {
+            this.follows.get(this.simboloInicial).add('$');
+        }
+        let huboCambios = true;
+        while (huboCambios)
+        {
+            huboCambios = false;
+            for (let [cabeza, alternativas] of this.producciones)
+            {
+                alternativas.forEach(alternativa =>
+                {
+                    for (let i = 0; i < alternativa.length; i++)
+                    {
+                        let simboloActual = alternativa[i];
+                        if (simboloActual.tipo === "NO_TERMINAL")
+                        {
+                            let followDelActual = this.follows.get(simboloActual.id);
+                            let tamanoOriginal = followDelActual.size;
+                            let tieneEpsilon = true;
+                            for (let j = i + 1; j < alternativa.length; j++)
+                            {
+                                let simboloSiguiente = alternativa[j];
+                                if (simboloSiguiente.tipo === "TERMINAL")
+                                {
+                                    followDelActual.add(simboloSiguiente.id);
+                                    tieneEpsilon = false;
+                                    break;
+                                }
+                                else if (simboloSiguiente.tipo === "NO_TERMINAL")
+                                {
+                                    let firstDelSiguiente = this.firsts.get(simboloSiguiente.id);
+                                    if (firstDelSiguiente)
+                                    {
+                                        firstDelSiguiente.forEach(s => {
+                                            if (s !== 'ε') followDelActual.add(s);
+                                        });
+                                        if (!firstDelSiguiente.has('ε'))
+                                        {
+                                            tieneEpsilon = false;
+                                            break; 
+                                        }
+                                    }
+                                }
+                            }
+                            // Si no hay nada adelante, o si todo lo de adelante tiene ε, entonces se hereda el Follow de la cabeza de la produccion
+                            if (tieneEpsilon)
+                            {
+                                let followDeCabeza = this.follows.get(cabeza);
+                                if (followDeCabeza)
+                                {
+                                    followDeCabeza.forEach(s => followDelActual.add(s));
+                                }
+                            }
+                            if (followDelActual.size > tamanoOriginal)
+                            {
+                                huboCambios = true;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
     generarTablaSimbolos()
     {
         // Léxico  
@@ -183,8 +255,16 @@ class GestorGramatica
         console.log("\n--- CONJUNTOS FIRST ---");
         for (let [nt, conjunto] of this.firsts)
         {
-            // Convertimos el Set a un arreglo para imprimirlo bonito
             console.log(` FIRST(${nt}) = { ${Array.from(conjunto).join(', ')} }`);
+        }
+    }
+
+    mostrarFollows()
+    {
+        console.log("\n--- CONJUNTOS FOLLOW ---");
+        for (let [nt, conjunto] of this.follows)
+        {
+            console.log(` FOLLOW(${nt}) = { ${Array.from(conjunto).join(', ')} }`);
         }
     }
 

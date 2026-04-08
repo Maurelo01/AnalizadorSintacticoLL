@@ -21,6 +21,8 @@ fs.readFile(archivo, 'utf8', (err, data) =>
         {
             gestorGramatica.calcularFirsts();
             gestorGramatica.mostrarFirsts();
+            gestorGramatica.calcularFollows();
+            gestorGramatica.mostrarFollows()
         }
     }
     catch (error)
