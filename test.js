@@ -1,6 +1,7 @@
 const fs = require('fs');
 const parser = require('./analizadorWison');
 const GestorGramatica = require('./GestorGramatica');
+const Lexer = require('./Lexer');
 const archivo = process.argv[2] || 'prueba.txt';
 
 fs.readFile(archivo, 'utf8', (err, data) =>
@@ -23,6 +24,16 @@ fs.readFile(archivo, 'utf8', (err, data) =>
             gestorGramatica.mostrarFirsts();
             gestorGramatica.calcularFollows();
             gestorGramatica.mostrarFollows()
+            gestorGramatica.generarTablaParser();
+            gestorGramatica.mostrarTAS();
+            let textoDePrueba = "( a + a ) FIN"; 
+            console.log(`\n--- PRUEBA DEL ESCÁNER Y PARSER ---`);
+            console.log(`Texto de entrada: "${textoDePrueba}"`);
+            const escaner = new Lexer(gestorGramatica.terminales);
+            let listaTokens = escaner.generarTokens(textoDePrueba);
+            console.log("\nTokens generados por el Lexer:");
+            console.log(listaTokens.map(t => `<${t.id}, '${t.lexema}'>`).join("  "));
+            gestorGramatica.analizarCadenaConPila(listaTokens);
         }
     }
     catch (error)

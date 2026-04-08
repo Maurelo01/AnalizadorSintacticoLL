@@ -216,6 +216,155 @@ class GestorGramatica
         }
     }
 
+    generarTablaParser()
+    {
+        this.tablaTAS = new Map();
+        for (let nt of this.noTerminales)
+        {
+            this.tablaTAS.set(nt, new Map());
+        }
+        for (let [cabeza, alternativas] of this.producciones)
+        {
+            let fila = this.tablaTAS.get(cabeza);
+            alternativas.forEach(alternativa =>
+            {
+                let firstDeAlternativa = this.obtenerFirstDeSecuencia(alternativa);
+                // Para cada terminal en PRIMERO(α), agregamos la producción a M[A, a]
+                firstDeAlternativa.forEach(terminal =>
+                {
+                    if (terminal !== 'ε')
+                    {
+                        if (fila.has(terminal))
+                        {
+                            this.errores.push(`Error TAS: Colisión en M[${cabeza}, ${terminal}]. La gramática no es LL(1) pura.`);
+                        }
+                        else
+                        {
+                            fila.set(terminal, alternativa);
+                        }
+                    }
+                });
+                // Si ε está en el PRIMERO(α) o la alternativa es vacía
+                if (firstDeAlternativa.has('ε') || alternativa.length === 0)
+                {
+                    let followsDeCabeza = this.follows.get(cabeza);
+                    if (followsDeCabeza)
+                    {
+                        followsDeCabeza.forEach(terminalSiguiente =>
+                        {
+                            let tokenColumna = terminalSiguiente === '$' ? '$_FIN' : terminalSiguiente;
+                            if (fila.has(tokenColumna))
+                            {
+                                this.errores.push(`Error TAS: Colisión en M[${cabeza}, ${tokenColumna}] por regla de Epsilon.`);
+                            }
+                            else
+                            {
+                                fila.set(tokenColumna, alternativa);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    obtenerFirstDeSecuencia(secuencia)
+    {
+        let conjuntoFirst = new Set();
+        if (secuencia.length === 0)
+        {
+            conjuntoFirst.add('ε');
+            return conjuntoFirst;
+        }
+        let primerSimbolo = secuencia[0];
+        if (primerSimbolo.tipo === "TERMINAL")
+        {
+            conjuntoFirst.add(primerSimbolo.id);
+        }
+        else if (primerSimbolo.tipo === "NO_TERMINAL")
+        {
+            let firstDelNt = this.firsts.get(primerSimbolo.id);
+            if (firstDelNt)
+            {
+                firstDelNt.forEach(s => conjuntoFirst.add(s));
+            }
+        }
+        return conjuntoFirst;
+    }
+
+    analizarCadenaConPila(tokensLexer)
+    {
+        console.log("\n--- INICIANDO ANÁLISIS LL(1) CON PILA ---");
+        let pila = [];
+        pila.push({ tipo: "TERMINAL", id: "$_FIN" });
+        pila.push({ tipo: "NO_TERMINAL", id: this.simboloInicial });
+        let ptr = 0;
+        let tokenActual = tokensLexer[ptr];
+        while (pila.length > 0)
+        {
+            let X = pila.pop();
+            let a = tokenActual;
+            console.log(`Pila tope: ${X.id} | Token entrada: ${a.id}`);
+            if (X.tipo === "TERMINAL")
+            {
+                if (X.id === a.id)
+                {
+                    ptr++;
+                    if (ptr < tokensLexer.length) tokenActual = tokensLexer[ptr];
+                }
+                else
+                {
+                    console.error(`Error Sintáctico: Se esperaba '${X.id}', se encontró '${a.id}' en lexema '${a.lexema}'`);
+                    return false;
+                }
+            } 
+            else if (X.tipo === "NO_TERMINAL")
+            {
+                let fila = this.tablaTAS.get(X.id);
+                // Busca M[X, a]
+                if (fila && fila.has(a.id))
+                {
+                    let alternativa = fila.get(a.id);
+                    // Si no es ε se mete en los símbolos a la pila de forma inversa
+                    if (alternativa.length > 0)
+                    {
+                        for (let i = alternativa.length - 1; i >= 0; i--)
+                        {
+                            pila.push(alternativa[i]);
+                        }
+                    }
+                }
+                else
+                {
+                    console.error(`Error Sintáctico: No hay regla en TAS para M[${X.id}, ${a.id}]. Token inesperado: '${a.lexema}'`);
+                    return false;
+                }
+            }
+        }
+        if (tokenActual.id !== "$_FIN")
+        {
+            console.error("Error Sintáctico: Entrada no consumida completamente.");
+            return false;
+        }
+        console.log("¡Cadena aceptada con éxito! La pila está vacía y se consumió la entrada.");
+        return true;
+    }
+
+    mostrarTAS()
+    {
+        console.log("\n--- TABLA DE PARSER (TAS) ---");
+        for (let [nt, fila] of this.tablaTAS)
+        {
+            let conexiones = [];
+            for (let [terminal, alternativa] of fila)
+            {
+                let produccionStr = alternativa.length === 0 ? "ε" : alternativa.map(s => s.id).join(" ");
+                conexiones.push(`[${terminal}] -> ${produccionStr}`);
+            }
+            console.log(` M[${nt}]: ${conexiones.join(" | ")}`);
+        }
+    }
+
     mostrarTablaSimbolos()
     {
         console.log("--- TABLA DE SÍMBOLOS ---");
