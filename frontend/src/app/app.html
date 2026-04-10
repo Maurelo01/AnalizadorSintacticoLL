@@ -1,45 +1,87 @@
-<div style="background: #c2d2e9; font-family: Arial; max-width: 1000px; margin: 5px auto; padding: 10px;">  
-  <h1 style="text-align: center;"> Compilador LL(1)</h1>
+<div class="contenedor-principal">
+  <h1>Compilador LL(1)</h1>
 
-  <div style="background: #f1f1f0; padding: 20px; margin-bottom: 20px;">
-    
-    <label style="font-weight: bold; display: block; margin-bottom: 10px;"> Gramática Wison:</label>
-    <textarea 
-      [(ngModel)]="gramatica" 
-      rows="10" 
-      style="width: 98%; font-family: monospace; padding: 10px; margin-bottom: 15px;" 
-      placeholder="Escribe el código Wison...">
-    </textarea>
+  <div class="panel">
+    <label>Gramática Wison:</label>
+    <textarea [(ngModel)]="gramatica" rows="10" placeholder="Escribe ely código Wison aquí..."></textarea>
 
-    <label style="font-weight: bold; display: block; margin-bottom: 10px;"> Texto a evaluar: </label>
-    <input 
-      type="text" 
-      [(ngModel)]="textoAEvaluar" 
-      style="width: 98%; font-family: monospace; padding: 10px; margin-bottom: 15px;" 
-      placeholder="Ejemplo: ( a + a ) FIN">
+    <label>Texto a evaluar:</label>
+    <input type="text" [(ngModel)]="textoAEvaluar" placeholder="Ejemplo: ( a + a ) FIN">
 
-    <button 
-      (click)="compilar()" 
-      [disabled]="cargando"
-      style="background: #3a4e7a; color: #f1f1f0; padding: 10px 20px; cursor: pointer; font-size: 18px; width: 100%;">
-      {{ cargando ? 'Analizando...' : 'Compilar y Generar Tabla' }}
+    <button (click)="compilar()" [disabled]="cargando">
+      {{ cargando ? 'Analizando...' : 'Compilar y Generar Tablas' }}
     </button>
   </div>
 
-  <div *ngIf="resultados" style="background-color: #5e83bab6; border: 2px solid #3a4e7a; padding: 20px;">
-    <div *ngIf="resultados.errores?.length > 0">
-      <h3 style="color: rgba(255, 0, 0, 0.596);">Errores encontrados:</h3>
-      <ul>
-        <li *ngFor="let err of resultados.errores">{{ err }}</li>
-      </ul>
+  <div class="panel errores" *ngIf="resultados?.errores?.length > 0">
+    <h3>Errores Encontrados</h3>
+    <ul>
+      <li *ngFor="let err of resultados.errores">{{ err }}</li>
+    </ul>
+  </div>
+
+  <div *ngIf="resultados?.exito">
+    
+    <div class="panel">
+      <h3>Conjuntos First y Follow</h3>
+      <div class="tablas-flex">
+        <table class="tabla-compi">
+          <tr><th>No Terminal</th><th>First</th></tr>
+          <tr *ngFor="let item of resultados.firsts | keyvalue">
+            <td class="resaltado">{{ item.key }}</td>
+            <td>{{ $any(item.value).join(', ') }}</td>
+          </tr>
+        </table>
+
+        <table class="tabla-compi">
+          <tr><th>No Terminal</th><th>Follow</th></tr>
+          <tr *ngFor="let item of resultados.follows | keyvalue">
+            <td class="resaltado">{{ item.key }}</td>
+            <td>{{ $any(item.value).join(', ') }}</td>
+          </tr>
+        </table>
+      </div>
     </div>
 
-    <div *ngIf="resultados.exito">
-      <h3 style="color: greenyellow;">Análisis Exitoso </h3>
-      <p><strong>Tokens Generados:</strong></p>
-      <p>{{ resultados.tokens.join('  ') }}</p>
+    <div class="panel">
+      <h3>Tabla Predictiva - TAS</h3>
+      <div style="overflow-x: auto;">
+        <table class="tabla-compi tabla-tas">
+          <tr>
+            <th>M[NT, T]</th>
+            <th *ngFor="let term of columnasTAS" class="terminal-col">{{ term }}</th>
+          </tr>
+          <tr *ngFor="let fila of resultados.tablaTAS | keyvalue">
+            <td class="resaltado">{{ fila.key }}</td>
+            <td *ngFor="let term of columnasTAS">
+              {{ $any(fila.value)[term] || '' }}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Árbol de Derivación</h3>
+      
+      <ng-template #nodoArbol let-nodo="nodo">
+        <div class="nodo-contenedor">
+          <div class="nodo-etiqueta" [class.es-hoja]="!nodo.hijos || nodo.hijos.length === 0">
+            {{ nodo.etiqueta }}
+          </div>
+          <div class="nodo-hijos" *ngIf="nodo.hijos && nodo.hijos.length > 0">
+            <ng-container *ngFor="let hijo of nodo.hijos">
+              <ng-container *ngTemplateOutlet="nodoArbol; context:{nodo: hijo}"></ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="arbol-raiz">
+        <ng-container *ngTemplateOutlet="nodoArbol; context:{nodo: resultados.arbol}"></ng-container>
+      </div>
+
     </div>
 
   </div>
-
 </div>
