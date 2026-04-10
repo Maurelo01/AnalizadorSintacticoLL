@@ -9,9 +9,9 @@ export class Api {
   private apiUrl = 'http://localhost:3000/api/compilar';
   constructor(private http: HttpClient) { }
 
-  enviarParaCompilar(gramatica: string, textoAEvaluar: string): Observable<any>
+  enviarParaCompilar(gramatica: string, textoEntrada: string): Observable<any>
   {
-    const datosCompilacion = { gramatica: gramatica, textoAEvaluar: textoAEvaluar};
+    const datosCompilacion = { codigoWison: gramatica, textoPrueba: textoEntrada};
     return this.http.post(this.apiUrl, datosCompilacion);
   }
 }

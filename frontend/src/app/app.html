@@ -1,1 +1,45 @@
-<h1> HOLA MUNDOOOOO </h1>
+<div style="background: #c2d2e9; font-family: Arial; max-width: 1000px; margin: 5px auto; padding: 10px;">  
+  <h1 style="text-align: center;"> Compilador LL(1)</h1>
+
+  <div style="background: #f1f1f0; padding: 20px; margin-bottom: 20px;">
+    
+    <label style="font-weight: bold; display: block; margin-bottom: 10px;"> Gramática Wison:</label>
+    <textarea 
+      [(ngModel)]="gramatica" 
+      rows="10" 
+      style="width: 98%; font-family: monospace; padding: 10px; margin-bottom: 15px;" 
+      placeholder="Escribe el código Wison...">
+    </textarea>
+
+    <label style="font-weight: bold; display: block; margin-bottom: 10px;"> Texto a evaluar: </label>
+    <input 
+      type="text" 
+      [(ngModel)]="textoAEvaluar" 
+      style="width: 98%; font-family: monospace; padding: 10px; margin-bottom: 15px;" 
+      placeholder="Ejemplo: ( a + a ) FIN">
+
+    <button 
+      (click)="compilar()" 
+      [disabled]="cargando"
+      style="background: #3a4e7a; color: #f1f1f0; padding: 10px 20px; cursor: pointer; font-size: 18px; width: 100%;">
+      {{ cargando ? 'Analizando...' : 'Compilar y Generar Tabla' }}
+    </button>
+  </div>
+
+  <div *ngIf="resultados" style="background-color: #5e83bab6; border: 2px solid #3a4e7a; padding: 20px;">
+    <div *ngIf="resultados.errores?.length > 0">
+      <h3 style="color: rgba(255, 0, 0, 0.596);">Errores encontrados:</h3>
+      <ul>
+        <li *ngFor="let err of resultados.errores">{{ err }}</li>
+      </ul>
+    </div>
+
+    <div *ngIf="resultados.exito">
+      <h3 style="color: greenyellow;">Análisis Exitoso </h3>
+      <p><strong>Tokens Generados:</strong></p>
+      <p>{{ resultados.tokens.join('  ') }}</p>
+    </div>
+
+  </div>
+
+</div>
