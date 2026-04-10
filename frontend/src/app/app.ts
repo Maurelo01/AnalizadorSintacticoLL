@@ -15,6 +15,7 @@ export class App {
   textoAEvaluar: string = '';
   resultados: any;
   cargando: boolean = false;
+  columnasTAS: string[] = [];
 
   constructor(private api: Api) {}
   
@@ -27,6 +28,7 @@ export class App {
     }
     this.cargando = true;
     this.resultados = null;
+    this.columnasTAS = [];
     this.api.enviarParaCompilar(this.gramatica, this.textoAEvaluar).subscribe(
     {next: (respuesta) =>
       {
@@ -42,5 +44,18 @@ export class App {
         this.cargando = false;
       }
     });
+  }
+
+  obtenerTerminales()
+  {
+    let terminales = new Set<string>();
+    for (let nt in this.resultados.tablaTAS)
+    {
+      for (let term in this.resultados.tablaTAS[nt])
+      {
+        terminales.add(term);
+      }
+    }
+    this.columnasTAS = Array.from(terminales).sort();
   }
 }
